@@ -39,6 +39,8 @@ To reload the configuration, run `make reload`.
 
 > [!IMPORTANT]
 > Many current linux systems already have _systemd-resolved_ running on port 53, so to serve the domain service using _triplednsmasq_, either disable _systemd-resolved_ entirely or only the _DNSStubListener_ component, or configure _triplednsmasq_ to use a different port than 53 in the `docker-compose.yml`. Otherwise, you will receive an `address already in use` error.
+>
+> Note however, that Microsoft Windows does not (easily?) allow to use DNS servers on a port other that 53!
 
 ### Configuration
 
@@ -50,3 +52,6 @@ The subdirectory `conf` contains configuration files for _Dnsmasq_:
 - `02_entries.conf`: Configuration-Style DNS entries like CNAME, SRV and TXT.
 
 The `hosts` subdirectory contains hosts files - each hosts file can contain multiple IP/hostname mappings, all hosts files are merged by _Dnsmasq_.
+
+> [!TIP]
+> It is not recommended to use `.local` as a top level domain for names to be resolved via unicast domain name services. Many implementations (including _systemd-resolved_) do not even try to resolve `.local` via DNS but instead try to look up the name using multicast DNS procotols. For (most probably) usable TLDs see [RFC 6762 Appendix G](https://www.rfc-editor.org/rfc/rfc6762#appendix-G).

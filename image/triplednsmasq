@@ -1,0 +1,85 @@
+#! /bin/bash
+
+# SPDX-FileCopyrightText: 2025 Philipp Grassl <philyg@linandot.net>
+# SPDX-License-Identifier: MIT
+
+TESTHOST="testrequest---triplednsmasq.local"
+TESTENTRY="--host-record=$TESTHOST,127.0.0.1,::1"
+BACKPORT1=54
+BACKPORT2=55
+
+function prefix() {
+	while read LINE; do
+		echo "$1 | $LINE"
+	done
+}
+
+function backgroundTask() {
+	local SHUTDOWN RELOAD PID
+	
+	while [ true ]; do
+		SHUTDOWN=0
+		RELOAD=0
+		trap "RELOAD=1;" SIGHUP
+		trap "SHUTDOWN=1;" SIGTERM
+		$@ &
+		PID=$!
+		
+		wait $PID
+		
+		if [[ "$RELOAD" == "1" ]]; then
+			echo "System: Reload requested, restarting."
+			kill $PID
+			wait $PID
+		elif [[ "$SHUTDOWN" == "1" ]]; then
+			echo "System: Shutdown requested."
+			kill $PID
+			wait $PID
+			break
+		else
+			echo "System: Terminated unexpectedly, restarting in 3 seconds."
+			kill $PID
+			sleep 3
+		fi
+	done
+}
+
+function backendTask() {
+	backgroundTask /usr/sbin/dnsmasq -p $1 -d -h -R --hostsdir=/srv/dnsmasq/hosts --conf-dir=/srv/dnsmasq/conf-backend $TESTENTRY
+}
+
+function frontendTask() {
+	backgroundTask /usr/sbin/dnsmasq -d -h -R --conf-dir=/srv/dnsmasq/conf-frontend $TESTENTRY
+}
+
+function runBackend() {
+	backendTask "$1" 1> >(prefix "dnsmasq@$1") 2>&1
+}
+
+function runFrontend() {
+	frontendTask 1> >(prefix "dnsmasq@FE") 2>&1
+}
+
+mkdir -p /run/triplednsmasq
+rm -f /run/triplednsmasq/*
+
+runBackend $BACKPORT1 &
+BACK1=$!
+
+runBackend $BACKPORT2 &
+BACK2=$!
+
+runFrontend &
+FRONT=$!
+
+echo $BACK1 > /run/triplednsmasq/back1.pid
+echo $BACK2 > /run/triplednsmasq/back2.pid
+echo $FRONT > /run/triplednsmasq/front.pid
+
+wait -n
+
+echo "Terminating."
+
+kill $BACK1 $BACK2 $FRONT
+
+wait

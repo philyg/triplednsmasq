@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 Philipp Grassl <philyg@linandot.net>
+# SPDX-License-Identifier: MIT
+
+services:
+  dns:
+    restart: always
+    build: image
+    image: philyg/triplednsmasq:0.1.0
+    volumes:
+      - "./data/dnsmasq/conf:/srv/dnsmasq/conf-backend"
+      - "./data/dnsmasq/hosts:/srv/dnsmasq/hosts"
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"

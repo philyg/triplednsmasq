@@ -1,0 +1,74 @@
+#! /bin/bash
+
+# SPDX-FileCopyrightText: 2025 Philipp Grassl <philyg@linandot.net>
+# SPDX-License-Identifier: MIT
+
+TIMEOUT=10
+TESTHOST="testrequest---triplednsmasq.local"
+
+function reloadOne() {
+	NUM=$1
+	PORT=$2
+	
+	PID=$(cat /run/triplednsmasq/back$NUM.pid)
+	
+	echo ""
+	echo "Restarting backend $NUM:"
+	kill -SIGHUP $PID
+
+	echo -n "Waiting for backend $NUM to start..."
+	sleep 1
+	
+	MAXITER=$((TIMEOUT * 2 - 2))
+	I=0
+	OK=0
+	
+	while [[ $I -lt $MAXITER ]]; do
+		sleep 0.5
+		nslookup -port=$PORT $TESTHOST 127.0.0.1 >/dev/null
+		
+		if [[ "$?" == "0" ]]; then
+			OK=1
+			break;
+		else
+			echo -n "."
+		fi
+		
+		I=$(($I+1))
+	done
+	
+	if [[ "$OK" != "1" ]]; then
+		echo " ERROR!"
+		echo "Backend $NUM did not respond to test-request! Check configuration! Not reloading any other server!"
+		exit 1
+	else
+		echo " OK!"
+		echo "Backend $NUM responded to test request. OK."
+	fi
+
+}
+
+echo "Checking config:"
+
+echo "--------------------"
+echo ""
+/usr/sbin/dnsmasq -d -h -R --hostsdir=/srv/dnsmasq/hosts --conf-dir=/srv/dnsmasq/conf-backend --test
+CONFERR=$?
+echo ""
+echo "--------------------"
+echo ""
+
+if [[ "$CONFERR" != "0" ]]; then
+	echo "Config check failed. Not restarting services."
+	exit 1
+fi
+
+echo "Config check successful."
+echo""
+
+echo "Restarting backends in sequence:"
+reloadOne 1 54
+reloadOne 2 55
+echo ""
+echo "Done."
+echo ""

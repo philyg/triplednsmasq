@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Philipp Grassl <philyg@linandot.net>
+# SPDX-License-Identifier: MIT
+
+SVC := dns
+
+real-reload:
+	docker compose exec ${SVC} /reload

@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Philipp Grassl <philyg@linandot.net>
+# SPDX-License-Identifier: MIT
+
+#IP Address     Hostnames, separated by space
+127.0.0.1       local.philyg.lan alsolocal.philyg.lan
+192.168.0.1     example.philyg.lan

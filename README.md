@@ -1,5 +1,9 @@
 # TripleDnsmasq - Three Dnsmasq services in concert for minimal downtime
 
+![Build Status](https://github.com/philyg/triplednsmasq/actions/workflows/docker-image.yml/badge.svg)
+![License](https://img.shields.io/github/license/philyg/triplednsmasq)
+![Release](https://img.shields.io/github/v/release/philyg/triplednsmasq)
+
 https://github.com/philyg/triplednsmasq
 
 ## Motivation
